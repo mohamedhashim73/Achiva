@@ -38,7 +38,7 @@ class _ChangeUserPasswordScreenState extends State<ChangeUserPasswordScreen> {
       body: ListView(
         padding: AppConstants.kScaffoldPadding.copyWith(bottom: 24),
         children: [
-          TextFieldWidget(controller: _currentPassword, hint: "Type your Email", prefixIconData: Icons.email,textInputAction: TextInputAction.next,),
+          TextFieldWidget(controller: _emailController, hint: "Type your Email", prefixIconData: Icons.email,textInputAction: TextInputAction.next,),
           TextFieldWidget(controller: _currentPassword, hint: "Type your current Password", prefixIconData: Icons.password,secureTxt: true,textInputAction: TextInputAction.next,),
           TextFieldWidget(controller: _newPassword, hint: "Type your new Password", prefixIconData: Icons.password,secureTxt: true,),
           8.vrSpace,
