@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../controllers/layout_controller/layout_cubit.dart';
 import '../../widgets/profile_widgets/textBehindIconWidget.dart';
+import '../../widgets/profile_widgets/user_goals_listview_widget.dart';
 import 'app_settings_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -92,16 +93,17 @@ class ProfileScreen extends StatelessWidget {
                       color: const Color(0xff75c0bc),
                       borderRadius: AppConstants.kMainRadius
                     ),
-                    child: Row(
+                    child: const Row(
                       children:
                       [
-                        TextBehindIconWidget(title: "Productivity",iconData: Icons.message,numValue: layoutCubit.user!.productivity.toString()),
-                        TextBehindIconWidget(iconData: Icons.task_alt,title: "Tasks/Goals done",numValue: layoutCubit.user!.streak.toString()),
+                        TextBehindIconWidget(title: "Productivity",iconData: Icons.message,numValue: "0"),
+                        TextBehindIconWidget(iconData: Icons.task_alt,title: "Goals done",numValue: "0"),
                       ],
                     ),
                   ),
                   Container(
                     padding: AppConstants.kContainerPadding,
+                    margin: const EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
                       color: AppColors.kWhite,
                       borderRadius: AppConstants.kMainRadius
@@ -109,30 +111,48 @@ class ProfileScreen extends StatelessWidget {
                     child: Row(
                       children: [
                         Expanded(
-                          child: Container(
-                            alignment: Alignment.center,
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                                color: AppColors.kLightGrey.withOpacity(0.1),
-                                borderRadius: AppConstants.kMainRadius
+                          child: InkWell(
+                            onTap: ()=> layoutCubit.toggleBetweenFriendsAndGoalsBar(viewFriendsNotGoals: true),
+                            child: Container(
+                              alignment: Alignment.center,
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                  color: layoutCubit.showFriendNotGoalsOnProfile ? const Color(0xff75c0bc).withOpacity(0.25) : AppColors.kLightGrey.withOpacity(0.1),
+                                  borderRadius: AppConstants.kMainRadius
+                              ),
+                              child: const Text("Friends",style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold),),
                             ),
-                            child: const Text("Friends",style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold),),
                           ),
                         ),
                         12.hrSpace,
                         Expanded(
-                          child: Container(
-                            alignment: Alignment.center,
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                                color: AppColors.kLightGrey.withOpacity(0.1),
-                                borderRadius: AppConstants.kMainRadius
+                          child: InkWell(
+                            onTap: ()=> layoutCubit.toggleBetweenFriendsAndGoalsBar(viewFriendsNotGoals: false),
+                            child: Container(
+                              alignment: Alignment.center,
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                  color: layoutCubit.showFriendNotGoalsOnProfile == false ? const Color(0xff75c0bc).withOpacity(0.25) : AppColors.kLightGrey.withOpacity(0.1),
+                                  borderRadius: AppConstants.kMainRadius
+                              ),
+                              child: const Text("Goals",style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold),),
                             ),
-                            child: const Text("Goals",style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold),),
                           ),
                         )
                       ],
                     ),
+                  ),
+                  Builder(
+                    builder: (context){
+                      if( layoutCubit.showFriendNotGoalsOnProfile )
+                        {
+                          return const SizedBox();
+                        }
+                      else
+                        {
+                          return UserGoalsListviewWidget(layoutCubit: layoutCubit);
+                        }
+                    },
                   )
                 ],
               );

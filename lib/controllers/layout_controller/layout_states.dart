@@ -7,6 +7,7 @@ class InitialLayoutState extends LayoutStates {}
 class SignOutSuccessfullyState extends LayoutStates {}
 
 class ToggleGenderState extends LayoutStates {}
+class ToggleBetweenFriendsAndGoalsBarState extends LayoutStates {}
 
 class PickedUserImageSuccessfullyState extends LayoutStates {}
 class PickedUserImageWithFailureState extends LayoutStates {}
@@ -16,6 +17,13 @@ class GetUserDataLoadingState extends LayoutStates {}
 class GetUserDataWithFailureState extends LayoutStates {
   final Failure failure;
   GetUserDataWithFailureState({required this.failure});
+}
+
+class GetUserGoalsSuccessfullyState extends LayoutStates {}
+class GetUserGoalsLoadingState extends LayoutStates {}
+class GetUserGoalsWithFailureState extends LayoutStates {
+  final Failure failure;
+  GetUserGoalsWithFailureState({required this.failure});
 }
 
 class UpdateUserDataSuccessfullyState extends LayoutStates {}

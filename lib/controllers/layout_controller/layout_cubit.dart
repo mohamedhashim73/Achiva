@@ -3,6 +3,7 @@ import 'package:achiva/core/constants/constants.dart';
 import 'package:achiva/core/constants/strings.dart';
 import 'package:achiva/core/errors/app_failures.dart';
 import 'package:achiva/core/network/check_internet_connection.dart';
+import 'package:achiva/models/goal_model.dart';
 import 'package:achiva/models/user_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -48,6 +49,33 @@ class LayoutCubit extends Cubit<LayoutStates>{
   void changeGenderStatus({required String value}){
     chosenGender = value;
     emit(ToggleGenderState());
+  }
+
+  bool showFriendNotGoalsOnProfile = true;
+  void toggleBetweenFriendsAndGoalsBar({required bool viewFriendsNotGoals}){
+    showFriendNotGoalsOnProfile = viewFriendsNotGoals;
+    emit(ToggleBetweenFriendsAndGoalsBarState());
+  }
+
+  List<GoalModel> myGoals = [];
+  Future<void> getMyGoals({bool? updateData}) async {
+    try{
+      if( myGoals.isEmpty || updateData != null )
+      {
+        emit(GetUserGoalsLoadingState());
+        myGoals.clear();           // TODO: to get new data
+        await cloudFirestore.collection(AppStrings.kUsersCollectionName).doc(CacheHelper.getString(key: AppStrings.kUserIDName) ?? AppConstants.kUserID!).collection(AppStrings.kGoalsCollectionName).get().then((data){
+          for( var item in data.docs )
+          {
+            myGoals.add(GoalModel.fromJson(json: item.data()));
+          }
+        });
+        emit(GetUserGoalsSuccessfullyState());
+      }
+    }
+    on FirebaseException catch(e){
+      emit(GetUserGoalsWithFailureState(failure: await CheckInternetConnection.getStatus() ? InternetNotFoundFailure() : ServerFailure()));
+    }
   }
 
   Future<String?> uploadImageToStorage() async {

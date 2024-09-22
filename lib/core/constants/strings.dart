@@ -1,6 +1,7 @@
 class AppStrings {
   static const String kLoginScreenName = "Login_Screen";
   static const String kUsersCollectionName = "Users";
+  static const String kGoalsCollectionName = "Goals";
   static const String kProfileScreenName = "Profile_Screen";
   static const String kRegisterScreenName = "Register_Screen";
   static const String kForgetPasswordScreenName = "ForgetPassword_Screen";
