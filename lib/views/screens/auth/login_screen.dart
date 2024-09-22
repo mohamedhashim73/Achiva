@@ -1,7 +1,7 @@
 import 'package:achiva/core/constants/extensions.dart';
+import 'package:achiva/views/screens/auth/enter_otp_of_phone_auth_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import '../../../controllers/auth_controller/auth_cubit.dart';
 import '../../../controllers/auth_controller/auth_states.dart';
 import '../../../core/Constants/constants.dart';
@@ -19,13 +19,11 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _phoneNumberController = TextEditingController();
 
   @override
   void dispose() {
-    _emailController.clear();
-    _passwordController.clear();
+    _phoneNumberController.clear();
     super.dispose();
   }
 
@@ -39,23 +37,12 @@ class _LoginScreenState extends State<LoginScreen> {
           padding: EdgeInsets.zero.copyWith(top: MediaQuery.of(context).padding.top + 34,bottom: 24),
           children:
           [
-            const Text("Hello,\nWelcome Back!",style: TextStyle(fontSize: 34,fontWeight: FontWeight.bold,height: 1.6),),
-            20.vrSpace,
-            TextFieldWidget(controller: _emailController,hint: "Email", prefixIconData: Icons.email,textInputAction: TextInputAction.next),
-            TextFieldWidget(controller: _passwordController, hint: "Password",secureTxt: true,prefixIconData: Icons.password),
-            8.vrSpace,
-            Align(
-              alignment: AlignmentDirectional.topEnd,
-              child: InkWell(
-                onTap: (){
-                  Navigator.pushNamed(context, AppStrings.kForgetPasswordScreenName);
-                },
-                child: Text("Forgot Password ?",style: TextStyle(fontSize: 14,fontWeight: FontWeight.w400,color: AppColors.kRed),),
-              ),
-            ),
-            20.vrSpace,
+            const Text("Hello,\nWelcome back !",style: TextStyle(fontSize: 32,fontWeight: FontWeight.bold,height: 1.6),),
+            24.vrSpace,
+            TextFieldWidget(controller: _phoneNumberController,hint: "Phone Number", prefixIconData: Icons.phone,textInputType: TextInputType.number),
+            12.vrSpace,
             BlocConsumer<AuthCubit,AuthStates>(
-              listenWhen: (past,current) => current is LoginSuccessfullyState || current is LoginWithFailureState,
+              listenWhen: (past,current) => current is CodeAutoRetrievalTimeOuState || current is LoginSuccessfullyState || current is LoginWithFailureState,
               listener: (context,state)
               {
                 if( state is LoginWithFailureState )
@@ -64,32 +51,23 @@ class _LoginScreenState extends State<LoginScreen> {
                 }
                 if( state is LoginSuccessfullyState )
                 {
-                  showSnackBarWidget(message: "Login successfully", successOrNot: true, context: context);
-                  Navigator.pushReplacementNamed(context, AppStrings.kProfileScreenName);
+                  Navigator.push(context, MaterialPageRoute(builder: (context)=> EnterOtpOfPhoneAuthScreen(phoneNumber: _phoneNumberController.text.trim(),openAfterUserLogin: true)));
                 }
               },
               builder: (context,state) => BtnWidget(
                 minWidth: double.infinity,
                 onTap: ()
                 {
-                  if( _emailController.text.isEmpty && _passwordController.text.isEmpty )
+                  if( _phoneNumberController.text.isEmpty )
                   {
-                    showSnackBarWidget(message: "Please, fill data, try again !", successOrNot: false, context: context);
-                  }
-                  else if ( _emailController.text.isEmpty && _passwordController.text.isNotEmpty )
-                  {
-                    showSnackBarWidget(message: "Please, enter your email", successOrNot: false, context: context);
-                  }
-                  else if ( _passwordController.text.isEmpty && _emailController.text.isNotEmpty )
-                  {
-                    showSnackBarWidget(message: "Please, enter your password", successOrNot: false, context: context);
+                    showSnackBarWidget(message: "Please, Enter Phone number, try again !", successOrNot: false, context: context);
                   }
                   else
                   {
-                    authCubit.login(email: _emailController.text.trim(), password: _passwordController.text.trim());
+                    authCubit.login(phoneNumber: _phoneNumberController.text.trim());
                   }
                 },
-                title: state is LoginLoadingState ? "Sing in loading" : "Sign in",
+                title: state is LoginLoadingState ? "Sign in loading" : "Sign in",
               ),
             ),
             16.vrSpace,
@@ -102,7 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 InkWell(
                   onTap: ()
                   {
-                    Navigator.pushNamed(context, AppStrings.kRegisterScreenName);
+                    Navigator.pushNamed(context, AppStrings.kEnterPhoneAuthScreenName);
                   },
                   child: Text("Click here",style: TextStyle(fontSize: 16,fontWeight: FontWeight.w500,color: AppColors.kMain),),
                 )

@@ -1,5 +1,6 @@
 import 'package:achiva/controllers/layout_controller/layout_cubit.dart';
 import 'package:achiva/controllers/layout_controller/layout_states.dart';
+import 'package:achiva/views/screens/layout/check_otp_of_current_phone_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/Constants/constants.dart';
@@ -7,10 +8,23 @@ import '../../../core/constants/strings.dart';
 import '../../widgets/profile_widgets/listTileWidget.dart';
 import 'edit_profile_screen.dart';
 
-class AppSettingsScreen extends StatelessWidget {
+class AppSettingsScreen extends StatefulWidget {
   final LayoutCubit layoutCubit;
   const AppSettingsScreen({super.key, required this.layoutCubit});
 
+  @override
+  State<AppSettingsScreen> createState() => _AppSettingsScreenState();
+}
+
+class _AppSettingsScreenState extends State<AppSettingsScreen> {
+  @override
+  void initState() {
+    if( !widget.layoutCubit.showFriendNotGoalsOnProfile )
+      {
+        widget.layoutCubit.toggleBetweenFriendsAndGoalsBar(viewFriendsNotGoals: true);
+      }
+    super.initState();
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -32,7 +46,7 @@ class AppSettingsScreen extends StatelessWidget {
             ListTileWidget(
                 onTap: ()
                 {
-                  Navigator.push(context, MaterialPageRoute(builder: (context)=> EditProfileScreen(layoutCubit: layoutCubit)));
+                  Navigator.push(context, MaterialPageRoute(builder: (context)=> EditProfileScreen(layoutCubit: widget.layoutCubit)));
                 },
                 title: "Edit Profile",
                 leadingIconData: Icons.account_circle
@@ -40,18 +54,10 @@ class AppSettingsScreen extends StatelessWidget {
             ListTileWidget(
                 onTap: ()
                 {
-                  Navigator.pushNamed(context, AppStrings.kChangeUserEmailScreenName);
+                  Navigator.push(context, MaterialPageRoute(builder: (context)=> CheckOtpOfCurrentPhoneScreen(layoutCubit: widget.layoutCubit, phoneNumber: widget.layoutCubit.user!.phoneNumber)));
                 },
-                title: "Change Email",
-                leadingIconData: Icons.email
-            ),
-            ListTileWidget(
-                onTap: ()
-                {
-                  Navigator.pushNamed(context, AppStrings.kChangeUserPasswordScreenName);
-                },
-                title: "Change Password",
-                leadingIconData: Icons.password
+                title: "Change Phone",
+                leadingIconData: Icons.phone
             ),
             ListTileWidget(
               onTap: (){
@@ -70,7 +76,7 @@ class AppSettingsScreen extends StatelessWidget {
               },
               child: ListTileWidget(
                 onTap: (){
-                  layoutCubit.signOut(notToEmitToState: false);
+                  widget.layoutCubit.signOut(notToEmitToState: false);
                 },
                 title: "Sign Out",
                 leadingIconData: Icons.login_outlined,

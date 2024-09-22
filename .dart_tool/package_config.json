@@ -374,6 +374,12 @@
       "languageVersion": "3.2"
     },
     {
+      "name": "pin_code_fields",
+      "rootUri": "file:///C:/Users/Soft/AppData/Local/Pub/Cache/hosted/pub.dev/pin_code_fields-8.0.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
       "name": "platform",
       "rootUri": "file:///C:/Users/Soft/AppData/Local/Pub/Cache/hosted/pub.dev/platform-3.1.5",
       "packageUri": "lib/",
@@ -524,7 +530,7 @@
       "languageVersion": "3.5"
     }
   ],
-  "generated": "2024-09-22T15:39:59.547609Z",
+  "generated": "2024-09-22T21:18:58.730698Z",
   "generator": "pub",
   "generatorVersion": "3.5.3",
   "flutterRoot": "file:///C:/flutter",

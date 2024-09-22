@@ -60,18 +60,15 @@ class LayoutCubit extends Cubit<LayoutStates>{
   List<GoalModel> myGoals = [];
   Future<void> getMyGoals({bool? updateData}) async {
     try{
-      if( myGoals.isEmpty || updateData != null )
-      {
-        emit(GetUserGoalsLoadingState());
-        myGoals.clear();           // TODO: to get new data
-        await cloudFirestore.collection(AppStrings.kUsersCollectionName).doc(CacheHelper.getString(key: AppStrings.kUserIDName) ?? AppConstants.kUserID!).collection(AppStrings.kGoalsCollectionName).get().then((data){
-          for( var item in data.docs )
-          {
-            myGoals.add(GoalModel.fromJson(json: item.data()));
-          }
-        });
-        emit(GetUserGoalsSuccessfullyState());
-      }
+      myGoals.clear();                 // TODO: to get new data
+      emit(GetUserGoalsLoadingState());
+      await cloudFirestore.collection(AppStrings.kUsersCollectionName).doc(CacheHelper.getString(key: AppStrings.kUserIDName) ?? AppConstants.kUserID!).collection(AppStrings.kGoalsCollectionName).get().then((data){
+        for( var item in data.docs )
+        {
+          myGoals.add(GoalModel.fromJson(json: item.data()));
+        }
+      });
+      emit(GetUserGoalsSuccessfullyState());
     }
     on FirebaseException catch(e){
       emit(GetUserGoalsWithFailureState(failure: await CheckInternetConnection.getStatus() ? InternetNotFoundFailure() : ServerFailure()));
@@ -84,12 +81,11 @@ class LayoutCubit extends Cubit<LayoutStates>{
       return await taskSnapshot.ref.getDownloadURL();
     }
     on FirebaseException catch(e){
-      debugPrint("Error while upload user image to storage, ${"Error, ${e.code.replaceAll("-", " ")}"}");
       return null;
     }
   }
 
-  Future<void> updateUserData({required String fname,required String lname,required String gender,required String userID,required String phoneNumber}) async {
+  Future<void> updateUserData({required String fname,required String lname,required String gender,required String userID,required String email}) async {
     try{
       emit(UpdateUserDataLoadingState());
       String? urlOfUpdatedUserImage;
@@ -97,7 +93,7 @@ class LayoutCubit extends Cubit<LayoutStates>{
       {
         urlOfUpdatedUserImage = await uploadImageToStorage();
       }
-      UserModel model = UserModel(id: userID,fname: fname, lname: lname, email: user!.email, gender: gender, photo: urlOfUpdatedUserImage ?? user!.photo, phoneNumber: phoneNumber, streak: user!.streak, productivity: user!.productivity);
+      UserModel model = UserModel(id: userID,fname: fname, lname: lname, email: email, gender: gender, photo: urlOfUpdatedUserImage ?? user!.photo, phoneNumber: user!.phoneNumber, streak: user!.streak, productivity: user!.productivity);
       await FirebaseFirestore.instance.collection(AppStrings.kUsersCollectionName).doc(userID).set(model.toJson());
       await getUserData(updateUserData: true);
       emit(UpdateUserDataSuccessfullyState());
@@ -107,68 +103,111 @@ class LayoutCubit extends Cubit<LayoutStates>{
     }
   }
 
-  // TODO: ChangeUserEmail must verify it first
-  FirebaseAuth firebaseAuth = FirebaseAuth.instance;
-  Future<void> changeUserEmail({required String password,required String email}) async {
+  String? verificationIdOfPhoneVerify;
+  Future<void> verifyPhoneNum({required String phoneNumber,required bool usedWithCurrentPhoneOrNewOne}) async {
     try{
-      emit(ChangeUserEmailLoadingState());
-      User? currentUser = firebaseAuth.currentUser;
-      if( currentUser != null )
+      emit(PhoneNumVerifiedLoadingState(usedWithCurrentPhoneOrNewOne: usedWithCurrentPhoneOrNewOne));
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: phoneNumber,
+        verificationCompleted: (PhoneAuthCredential credential) {},
+        verificationFailed: (FirebaseAuthException e)
         {
-          AuthCredential currentCredential = EmailAuthProvider.credential(email: currentUser.email!, password: password);
-          await currentUser.reauthenticateWithCredential(currentCredential);
-          await currentUser.verifyBeforeUpdateEmail(email);
-          // await signOut(notToEmitToState: true);
-          emit(ChangeUserEmailSuccessfullyState());
-        }
+          emit(PhoneNumVerifiedWithFailureState(usedWithCurrentPhoneOrNewOne: usedWithCurrentPhoneOrNewOne,message: "Error, ${e.code.replaceAll("-", " ")}"));
+        },
+        codeSent: (String verificationId, int? resendToken)
+        {
+          verificationIdOfPhoneVerify = verificationId;
+          emit(PhoneNumVerifiedSuccessfullyState(usedWithCurrentPhoneOrNewOne: usedWithCurrentPhoneOrNewOne));
+        },
+        codeAutoRetrievalTimeout: (String verificationId)
+        {
+          verificationIdOfPhoneVerify = verificationId;
+          emit(CodeAutoRetrievalTimeOutOnChangeUserPhoneState());
+        },
+      );
+    }
+    on FirebaseException catch(e){
+      emit(PhoneNumVerifiedWithFailureState(usedWithCurrentPhoneOrNewOne : usedWithCurrentPhoneOrNewOne,message: "Error, ${e.code.replaceAll("-", " ")}"));
+    }
+  }
+
+  void checkOtpOfCurrentPhone({required String code}) async {
+    try{
+      emit(CheckOtpOfCurrentPhoneLoadingState());
+      PhoneAuthCredential credential = PhoneAuthProvider.credential(verificationId: verificationIdOfPhoneVerify!, smsCode: code);
+      await firebaseAuth.currentUser!.reauthenticateWithCredential(credential);
+      emit(CheckOtpOfCurrentPhoneSuccessfullyState());
+    }
+    on FirebaseException catch(e){
+      emit(CheckOtpOfCurrentPhoneWithFailureState(message: "Error, ${e.code.replaceAll("-", " ")}"));
+    }
+  }
+
+  FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+  Future<void> changeUserPhoneNumber({required String pinCode,required String phoneNumber}) async {
+    try{
+      emit(ChangeUserPhoneNumberLoadingState());
+      await firebaseAuth.currentUser!.updatePhoneNumber(PhoneAuthProvider.credential(
+        verificationId: verificationIdOfPhoneVerify!,
+        smsCode: pinCode,
+      ));
+      await updateUserPasswordOnDatabase(phone: phoneNumber);
+      emit(ChangeUserPhoneNumberSuccessfullyState());
     }
     on FirebaseException catch(e){
       debugPrint("Code : ${e.code}");
-      // TODO: unknown in case password is correct but inValid Email entered
-      emit(ChangeUserEmailWithFailureState(message: "Error, ${e.code == "unknown" ? "Invalid Email entered, try a real one!" : e.code.replaceAll("-", " ")}"));
+      emit(ChangeUserPhoneNumberWithFailureState(message: e.code.replaceAll("-", " ")));
     }
   }
 
-  // TODO: when listen on user data, if there is change on email ( Firestore , CurrentUser ) after user changed email and verified it
-  void updateUserEmailOnDatabase({required String email}) async {
+  Future<void> updateUserPasswordOnDatabase({required String phone}) async {
     try{
       await FirebaseFirestore.instance.collection(AppStrings.kUsersCollectionName).doc(CacheHelper.getString(key: AppStrings.kUserIDName) ?? AppConstants.kUserID!).update({
-        "email" : email
+        "phoneNumber" : phone
       });
-      user!.email = email;
+      user!.phoneNumber = phone;
       emit(GetUserDataSuccessfullyState());
     }
     on FirebaseException catch(e){
-      debugPrint("Error while updating userEmail on Firestore, ${e.code}");
+      debugPrint("Error while updating userPhoneNumber on Firestore, ${e.code}");
     }
   }
 
-  Future<void> changeUserPassword({required String email,required String currentPassword,required String newPassword}) async {
+  void sendOtpForPhoneForDeletingAccount() async {
     try{
-      emit(ChangePasswordLoadingState());
-      User? currentUser = firebaseAuth.currentUser;
-      if( currentUser != null )
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: user!.phoneNumber,
+        verificationCompleted: (PhoneAuthCredential credential) {},
+        verificationFailed: (FirebaseAuthException e)
         {
-          AuthCredential currentCredential = EmailAuthProvider.credential(email: email, password: currentPassword);
-          await currentUser.reauthenticateWithCredential(currentCredential);
-          await currentUser.updatePassword(newPassword);
-          emit(ChangePasswordSuccessfullyState());
-        }
+          emit(DeleteAccountWithFailureState(message: "Error, ${e.code.replaceAll("-", " ")}"));
+        },
+        codeSent: (String verificationId, int? resendToken)
+        {
+          verificationIdOfPhoneVerify = verificationId;
+          emit(OtpSentToPhoneWhileDeletingPhoneNumberSuccessfullyState());
+        },
+        codeAutoRetrievalTimeout: (String verificationId)
+        {
+          verificationIdOfPhoneVerify = verificationId;
+          emit(CodeAutoRetrievalTimeOutOnChangeUserPhoneState());
+        },
+      );
     }
     on FirebaseException catch(e){
-      emit(ChangePasswordWithFailureState(message: "Error, ${e.code.replaceAll("-", " ")}"));
+      emit(OtpSentToPhoneWhileDeletingPhoneNumberWithFailureState(message: e.code.replaceAll("-", " ")));
     }
   }
 
-  Future<void> deleteAccount({required String email,required String password}) async {
+  Future<void> deleteAccount({required String pinCode}) async {
     try{
       emit(DeleteAccountLoadingState());
+      PhoneAuthCredential credential = PhoneAuthProvider.credential(verificationId: verificationIdOfPhoneVerify!, smsCode: pinCode);
+      await firebaseAuth.currentUser!.reauthenticateWithCredential(credential);
       User? currentUser = firebaseAuth.currentUser;
       if( currentUser != null )
       {
         String userID = currentUser.uid;
-        AuthCredential currentCredential = EmailAuthProvider.credential(email: email, password: password);
-        await currentUser.reauthenticateWithCredential(currentCredential);
         await currentUser.delete();
         await cloudFirestore.collection(AppStrings.kUsersCollectionName).doc(userID).delete();
         await signOut(notToEmitToState: true);
@@ -176,14 +215,14 @@ class LayoutCubit extends Cubit<LayoutStates>{
       }
     }
     on FirebaseException catch(e){
-      debugPrint("Code : ${e.code}");
-      emit(DeleteAccountWithFailureState(message: "Error, ${e.code == "invalid-credential" ? "Incorrect password entered" : e.code.replaceAll("-", " ")}"));
+      emit(DeleteAccountWithFailureState(message: "Error, ${e.code.replaceAll("-", " ")}"));
     }
   }
 
   Future<void> signOut({required bool notToEmitToState}) async {
     await CacheHelper.clearCache();
     AppConstants.kUserID = null;
+    myGoals.clear();
     user = null;
     if( notToEmitToState == false )
       {

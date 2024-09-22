@@ -1,11 +1,9 @@
 import 'dart:io';
-
 import 'package:achiva/controllers/layout_controller/layout_cubit.dart';
 import 'package:achiva/core/constants/extensions.dart';
 import 'package:achiva/core/constants/strings.dart';
-import 'package:achiva/views/screens/auth/forget_password_screen.dart';
-import 'package:achiva/views/screens/layout/change_user_email_screen.dart';
-import 'package:achiva/views/screens/layout/change_user_password_screen.dart';
+import 'package:achiva/views/screens/auth/enter_phone_num_screen.dart';
+import 'package:achiva/views/screens/layout/change_user_phone_number_screen.dart';
 import 'package:achiva/views/screens/layout/delete_account_screen.dart';
 import 'package:achiva/views/screens/layout/notifications_screen.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +12,6 @@ import 'package:image_picker/image_picker.dart';
 import '../../controllers/auth_controller/auth_cubit.dart';
 import '../../views/screens/auth/login_screen.dart';
 import '../../views/screens/auth/pick_user_image_screen.dart';
-import '../../views/screens/auth/register_screen.dart';
 import '../../views/screens/layout/profile_screen.dart';
 
 class AppConstants{
@@ -22,12 +19,10 @@ class AppConstants{
   static Map<String, Widget Function(BuildContext)> kRoutes = {
     AppStrings.kLoginScreenName: (context) => const LoginScreen(),
     AppStrings.kProfileScreenName: (context) => const ProfileScreen(),
-    AppStrings.kRegisterScreenName: (context) => const RegisterScreen(),
-    AppStrings.kForgetPasswordScreenName: (context) => const ForgetPasswordScreen(),
     AppStrings.kPickUserImageScreenName: (context) => const PickUserImageScreen(),
+    AppStrings.kEnterPhoneAuthScreenName: (context) => const EnterPhoneAuthScreen(),
     AppStrings.kNotificationsScreenName: (context) => const NotificationsScreen(),
-    AppStrings.kChangeUserEmailScreenName: (context) => const ChangeUserEmailScreen(),
-    AppStrings.kChangeUserPasswordScreenName: (context) => const ChangeUserPasswordScreen(),
+    AppStrings.kChangeUserEmailScreenName: (context) => const ChangeUserPhoneScreen(),
     AppStrings.kDeleteAccountScreenName: (context) => const DeleteAccountScreen(),
   };
 

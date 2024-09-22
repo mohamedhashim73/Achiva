@@ -22,16 +22,12 @@ class UserGoalsListviewWidget extends StatefulWidget {
 class _UserGoalsListviewWidgetState extends State<UserGoalsListviewWidget> {
   @override
   void initState() {
-    if( widget.layoutCubit.myGoals.isEmpty )
-    {
-      widget.layoutCubit.getMyGoals();
-    }
+    widget.layoutCubit.getMyGoals();
     super.initState();
   }
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<LayoutCubit,LayoutStates>(
-      buildWhen: (past,currentState) => currentState is GetUserDataSuccessfullyState || currentState is GetUserGoalsWithFailureState || currentState is GetUserGoalsLoadingState,
       builder: (context,state){
         if( widget.layoutCubit.myGoals.isNotEmpty )
           {
@@ -73,7 +69,18 @@ class _UserGoalsListviewWidgetState extends State<UserGoalsListviewWidget> {
           }
         else
           {
-            return const SizedBox(height: 300,child: LoadingWidget(message: "Loading User Goals"));
+            if( state is GetUserGoalsSuccessfullyState && widget.layoutCubit.myGoals.isEmpty )
+              {
+                return Container(
+                  alignment: Alignment.center,
+                  height: 300,
+                  child: Text("No Goals created until now !",style: TextStyle(fontSize: 16,fontWeight: FontWeight.w600,color: AppColors.kBlack),),
+                );
+              }
+            else
+              {
+                return const SizedBox(height: 300,child: LoadingWidget(message: "Loading User Goals"));
+              }
           }
       },
     );

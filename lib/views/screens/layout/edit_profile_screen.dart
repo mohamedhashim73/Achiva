@@ -24,13 +24,13 @@ class EditProfileScreen extends StatefulWidget {
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _fnameController = TextEditingController();
   final TextEditingController _lnameController = TextEditingController();
-  final TextEditingController _phoneNumberController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
 
   void setUserDataToTextFields(){
     widget.layoutCubit.userImage = null;
     _fnameController.text = widget.layoutCubit.user!.fname;
     _lnameController.text = widget.layoutCubit.user!.lname;
-    _phoneNumberController.text = widget.layoutCubit.user!.phoneNumber;
+    _emailController.text = widget.layoutCubit.user!.email;
     widget.layoutCubit.chosenGender = widget.layoutCubit.user!.gender;
   }
 
@@ -44,7 +44,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void dispose() {
     _fnameController.dispose();
     _lnameController.dispose();
-    _phoneNumberController.dispose();
+    _emailController.dispose();
     widget.layoutCubit.chosenGender = null;
     widget.layoutCubit.userImage = null;
     super.dispose();
@@ -96,7 +96,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           24.vrSpace,
           TextFieldWidget(textInputAction: TextInputAction.next,controller: _fnameController, hint: "First Name", prefixIconData: Icons.account_circle),
           TextFieldWidget(textInputAction: TextInputAction.next,controller: _lnameController, hint: "Last Name", prefixIconData: Icons.account_circle),
-          TextFieldWidget(textInputAction: TextInputAction.next,controller: _phoneNumberController, hint: "Phone Number", prefixIconData: Icons.phone,textInputType: TextInputType.number),
+          TextFieldWidget(textInputAction: TextInputAction.next,controller: _emailController, hint: "Email", prefixIconData: Icons.email),
           BlocBuilder<LayoutCubit,LayoutStates>(
             buildWhen: (past,current) => current is ChangeGenderStatusState,
             builder: (context,state){
@@ -122,29 +122,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               minWidth: double.infinity,
               onTap: ()
               {
-                if( _fnameController.text.isEmpty && _lnameController.text.isEmpty && _phoneNumberController.text.isEmpty && widget.layoutCubit.chosenGender == null )
+                if( _fnameController.text.isEmpty && _lnameController.text.isEmpty && _emailController.text.isEmpty && widget.layoutCubit.chosenGender == null )
                 {
                   showSnackBarWidget(message: "Please, fill data, try again !", successOrNot: false, context: context);
                 }
-                else if( _fnameController.text.isEmpty && _lnameController.text.isNotEmpty && _phoneNumberController.text.isNotEmpty && widget.layoutCubit.chosenGender != null )
+                else if( _fnameController.text.isEmpty && _lnameController.text.isNotEmpty && _emailController.text.isNotEmpty && widget.layoutCubit.chosenGender != null )
                 {
                   showSnackBarWidget(message: "Please, enter your First Name", successOrNot: false, context: context);
                 }
-                else if( _fnameController.text.isNotEmpty && _lnameController.text.isEmpty && _phoneNumberController.text.isNotEmpty && widget.layoutCubit.chosenGender != null )
+                else if( _fnameController.text.isNotEmpty && _lnameController.text.isEmpty && _emailController.text.isNotEmpty && widget.layoutCubit.chosenGender != null )
                 {
                   showSnackBarWidget(message: "Please, enter your Last Name", successOrNot: false, context: context);
                 }
-                else if( _fnameController.text.isNotEmpty && _lnameController.text.isNotEmpty && _phoneNumberController.text.isEmpty && widget.layoutCubit.chosenGender != null )
+                else if( _fnameController.text.isNotEmpty && _lnameController.text.isNotEmpty && _emailController.text.isEmpty && widget.layoutCubit.chosenGender != null )
                 {
                   showSnackBarWidget(message: "Please, enter your Phone Number", successOrNot: false, context: context);
                 }
-                else if( _fnameController.text.isNotEmpty && _lnameController.text.isNotEmpty && _phoneNumberController.text.isNotEmpty && widget.layoutCubit.chosenGender == null )
+                else if( _fnameController.text.isNotEmpty && _lnameController.text.isNotEmpty && _emailController.text.isNotEmpty && widget.layoutCubit.chosenGender == null )
                 {
                   showSnackBarWidget(message: "Please, Choose your gender", successOrNot: false, context: context);
                 }
                 else
                 {
-                  widget.layoutCubit.updateUserData(fname: _fnameController.text.trim(), lname: _lnameController.text.trim(),gender: widget.layoutCubit.chosenGender!, userID: AppConstants.kUserID ?? widget.layoutCubit.user!.id, phoneNumber: _phoneNumberController.text.trim());
+                  widget.layoutCubit.updateUserData(fname: _fnameController.text.trim(), lname: _lnameController.text.trim(),gender: widget.layoutCubit.chosenGender!, userID: AppConstants.kUserID ?? widget.layoutCubit.user!.id, email: _emailController.text.trim());
                 }
               },
               title: state is UpdateUserDataLoadingState ? "Update data loading" : "Update",

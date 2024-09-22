@@ -16,6 +16,7 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   await CacheHelper.cacheInitialization();
+  // await CacheHelper.clearCache();
   Bloc.observer = MyBlocObserver();
   AppConstants.kUserID = CacheHelper.getString(key: AppStrings.kUserIDName);
   runApp(const MyApp());

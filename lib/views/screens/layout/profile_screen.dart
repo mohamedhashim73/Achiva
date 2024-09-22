@@ -19,7 +19,11 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final LayoutCubit layoutCubit = LayoutCubit.getInstance(context)..getUserData();
+    final LayoutCubit layoutCubit = LayoutCubit.getInstance(context)..showFriendNotGoalsOnProfile = true;
+    if( layoutCubit.user == null )
+      {
+        layoutCubit.getUserData();
+      }
     return Scaffold(
       appBar: AppBar(
         title: const Text("Profile"),
@@ -68,24 +72,7 @@ class ProfileScreen extends StatelessWidget {
                   16.vrSpace,
                   Text("${layoutCubit.user!.fname} ${layoutCubit.user!.lname}",textAlign: TextAlign.center,style: TextStyle(fontSize: 20,color: AppColors.kBlack,fontWeight: FontWeight.bold),),
                   4.vrSpace,
-                  StreamBuilder(
-                      stream: FirebaseAuth.instance.userChanges(),
-                      builder: (context,snapshots)
-                      {
-                        if( layoutCubit.user != null && snapshots.data != null && layoutCubit.user!.email.trim() != snapshots.data!.email!.trim() )
-                          {
-                            layoutCubit.updateUserEmailOnDatabase(email: snapshots.data!.email!.trim());
-                          }
-                        if( snapshots.data != null && layoutCubit.user!.email.trim() != snapshots.data!.email!.trim() )
-                          {
-                            return Text(snapshots.data!.email!,textAlign: TextAlign.center,style: TextStyle(fontSize: 16,color: AppColors.kDarkGrey,fontWeight: FontWeight.w500),);
-                          }
-                        else
-                          {
-                            return Text(layoutCubit.user!.email,textAlign: TextAlign.center,style: TextStyle(fontSize: 16,color: AppColors.kDarkGrey,fontWeight: FontWeight.w500));
-                          }
-                      }
-                  ),
+                  Text(layoutCubit.user!.email,textAlign: TextAlign.center,style: TextStyle(fontSize: 16,color: AppColors.kDarkGrey,fontWeight: FontWeight.w500)),
                   Container(
                     padding: AppConstants.kContainerPadding,
                     margin: const EdgeInsets.symmetric(vertical: 16),

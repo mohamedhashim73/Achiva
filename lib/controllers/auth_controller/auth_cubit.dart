@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/network/cache_network.dart';
-import '../../core/network/check_internet_connection.dart';
 import 'auth_states.dart';
 
 class AuthCubit extends Cubit<AuthStates>{
@@ -22,61 +21,106 @@ class AuthCubit extends Cubit<AuthStates>{
     emit(ChangeBoardingPageViewIndexState());
   }
 
+  String? verificationID;
+  void verifyPhoneNumber({required String phoneNumber}) async {
+    try{
+      emit(PhoneNumberVerifiedLoadingState());
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: phoneNumber,
+        verificationCompleted: (PhoneAuthCredential credential) {},
+        verificationFailed: (FirebaseAuthException e)
+        {
+          emit(PhoneNumberVerifiedWithFailureState(message: "Error, ${e.code.replaceAll("-", " ")}"));
+        },
+        codeSent: (String verificationId, int? resendToken)
+        {
+          verificationID = verificationId;
+          emit(PhoneNumberVerifiedSuccessfullyState());
+        },
+        codeAutoRetrievalTimeout: (String verificationId)
+        {
+          verificationID = verificationId;
+          emit(CodeAutoRetrievalTimeOuState());
+        },
+      );
+    }
+    on FirebaseException catch(e){
+      emit(PhoneNumberVerifiedWithFailureState(message: "Error, ${e.code.replaceAll("-", " ")}"));
+    }
+  }
+
+  Future<void> signInWithPhone({required PhoneAuthCredential credential,required bool useWithLoginNotRegister}) async {
+    await FirebaseAuth.instance.signInWithCredential(credential).then((userCredential) async {
+      DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance.collection(AppStrings.kUsersCollectionName).doc(userCredential.user!.uid).get();
+      if( documentSnapshot.exists == false && useWithLoginNotRegister == true )
+        {
+          emit(ConfirmAuthOtpWithFailureState(message: "Not found a User with this Phone Number.\nCreate a new account with it !"));
+        }
+      else
+        {
+          AppConstants.kUserID = userCredential.user!.uid;
+          await CacheHelper.insertString(key: AppStrings.kUserIDName, value: userCredential.user!.uid);
+          emit(ConfirmAuthOtpSuccessfullyState());
+        }
+    });
+  }
+
+  void confirmPinCode({required String code,required bool useWithLoginNotRegister}) async {
+    try{
+      emit(ConfirmAuthOtpLoadingState());
+      PhoneAuthCredential credential = PhoneAuthProvider.credential(verificationId: verificationID!, smsCode: code);
+      await signInWithPhone(credential: credential,useWithLoginNotRegister: useWithLoginNotRegister);
+    }
+    on FirebaseException catch(e){
+      emit(ConfirmAuthOtpWithFailureState(message: "Error, ${e.code.replaceAll("-", " ")}"));
+    }
+  }
+
   String? chosenGender;
   void changeGenderStatus({required String value}){
     chosenGender = value;
     emit(ChangeGenderStatusState());
   }
 
-  String? userID;
   FirebaseAuth firebaseAuth = FirebaseAuth.instance;
-  void createUser({required String fname,required String lname,required String email,required String gender,required String phoneNumber,required String password}) async {
+  void saveUserDataOnDataBase({required String userID,required String fname,required String lname,required String email,required String gender,required String phoneNumber}) async {
     try{
-      emit(CreateUserLoadingState());
-      UserCredential userCredential = await firebaseAuth.createUserWithEmailAndPassword(email: email, password: password);
-      if( userCredential.user != null )
-      {
-        await saveUserData(password: password,fname: fname, lname: lname, email: email, gender: gender, userID: userCredential.user!.uid, phoneNumber: phoneNumber);
-      }
+      emit(SaveUserDataOnFirestoreLoadingState());
+      UserModel model = UserModel(id: userID,fname: fname, lname: lname, email: email, gender: gender, photo: null, phoneNumber: phoneNumber, streak: 0, productivity: 0);
+      await FirebaseFirestore.instance.collection(AppStrings.kUsersCollectionName).doc(userID).set(model.toJson());
+      emit(SaveUserDataOnFirestoreSuccessfullyState());
     }
     on FirebaseException catch(e) {
-      emit(CreateUserWithFailureState(message: "Error, ${e.code.replaceAll("-", " ")}"));
+      emit(SaveUserDataOnFirestoreWithFailureState(message: "Error, ${e.code.replaceAll("-", " ")}"));
     }
   }
 
-  void login({required String email,required String password}) async {
+  void login({required String phoneNumber}) async {
     try{
       emit(LoginLoadingState());
-      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: password);
-      if( userCredential.user != null )
-      {
-        AppConstants.kUserID = userCredential.user!.uid;
-        await CacheHelper.insertString(key: AppStrings.kUserIDName, value: userCredential.user!.uid);
-        emit(LoginSuccessfullyState());
-      }
-    } on FirebaseAuthException catch (e) {
-      if( e.code == 'invalid-credential' )
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: phoneNumber,
+        verificationCompleted: (PhoneAuthCredential credential){},
+        verificationFailed: (FirebaseAuthException e)
         {
-          emit(LoginWithFailureState(message: "Incorrect Data entered, check it and try again"));
-        }
-      else if ( e.code == 'too-many-requests' )
+          debugPrint("Failure inside code, ${e.code}");
+          emit(LoginWithFailureState(message: "Error, ${e.code.replaceAll("-", " ")}"));
+        },
+        codeSent: (String verificationId, int? resendToken)
         {
-          emit(LoginWithFailureState(message: "Access to this account has been temporarily disabled due to many failed login"));
-        }
-      else
-      {
-        emit(LoginWithFailureState(message: await CheckInternetConnection.getStatus() ? "Check Internet connection, try again !" : "Something went wrong, try again later"));
-      }
+          verificationID = verificationId;
+          emit(LoginSuccessfullyState());
+        },
+        codeAutoRetrievalTimeout: (String verificationId)
+        {
+          verificationID = verificationId;
+          emit(CodeAutoRetrievalTimeOuState());
+        },
+      );
+    } on FirebaseException catch (e) {
+      debugPrint("Error, ${e.code}");
+      emit(LoginWithFailureState(message: "Error, ${e.code.replaceAll("-", " ")}"));
     }
-  }
-
-  Future<void> saveUserData({required String password,required String fname,required String lname,required String email,required String gender,required String userID,required String phoneNumber}) async {
-    emit(SaveUserDataOnFirestoreLoadingState());
-    await CacheHelper.insertString(key: AppStrings.kUserIDName, value: userID);
-    AppConstants.kUserID = userID;
-    UserModel model = UserModel(id: userID,fname: fname, lname: lname, email: email, gender: gender, photo: null, phoneNumber: phoneNumber, streak: 0, productivity: 0);
-    await FirebaseFirestore.instance.collection(AppStrings.kUsersCollectionName).doc(userID).set(model.toJson());
-    emit(CreateUserSuccessfullyState());
   }
 
   File? userImage;
@@ -105,17 +149,6 @@ class AuthCubit extends Cubit<AuthStates>{
     }
     on FirebaseException catch(e){
       emit(UploadUserImageToStorageWithFailureState(message: "Error, ${e.code.replaceAll("-", " ")}"));
-    }
-  }
-
-  void forgetPassword({required String email}) async {
-    try{
-      emit(SendPasswordResetEmailLoadingState());
-      await firebaseAuth.sendPasswordResetEmail(email: email);
-      emit(SendPasswordResetEmailSuccessfullyState());
-    }
-    on FirebaseException catch(e){
-      emit(SendPasswordResetEmailWithFailureState(message: "Error, ${e.code.replaceAll("-", " ")}"));
     }
   }
 }

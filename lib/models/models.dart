@@ -9,25 +9,6 @@ class Friend {
   Friend({required this.friendsUsername, required this.status});
 }
 
-// Goal Model
-class Goal {
-  String name;
-  String date;
-  int noTasks;
-  String visibility;
-  int progress;
-  List<Task> tasks;
-
-  Goal({
-    required this.name,
-    required this.date,
-    required this.noTasks,
-    required this.visibility,
-    required this.progress,
-    required this.tasks,
-  });
-}
-
 // Task Model
 class Task {
   int id;
